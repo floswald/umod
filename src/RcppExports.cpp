@@ -22,3 +22,17 @@ BEGIN_RCPP
     return Rcpp::wrap(__result);
 END_RCPP
 }
+// util_module_file
+List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par);
+RcppExport SEXP umod_util_module_file(SEXP cashRSEXP, SEXP EVRSEXP, SEXP hsizeRSEXP, SEXP laborRSEXP, SEXP parSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    NumericMatrix cashR = Rcpp::as<NumericMatrix >(cashRSEXP);
+    NumericMatrix EVR = Rcpp::as<NumericMatrix >(EVRSEXP);
+    NumericVector hsizeR = Rcpp::as<NumericVector >(hsizeRSEXP);
+    NumericVector laborR = Rcpp::as<NumericVector >(laborRSEXP);
+    List par = Rcpp::as<List >(parSEXP);
+    List __result = util_module_file(cashR, EVR, hsizeR, laborR, par);
+    return Rcpp::wrap(__result);
+END_RCPP
+}

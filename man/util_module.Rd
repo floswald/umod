@@ -1,6 +1,6 @@
 \name{util_module}
 \alias{util_module}
-\title{C++ module for computation of V = U + b*EV}
+\title{C++ module for computation of V = max_s U + b*EV(s)}
 \usage{
   util_module(cashR, saveR, EVR, hsizeR, laborR, par, b)
 }
@@ -53,7 +53,19 @@
   computes value functions for \code{m} discrete labor
   supply choices. no time separability assumed, i.e. labor
   supply is not implied by current resources. computes V on
-  \code{n} states.
+  \code{n} states. The current implementation computes the
+  following functional form for the utility function:
+  \deqn{\begin{array}{ll} u(c,l_j,h) &= \frac{\left(c \exp(
+  \alpha l_j ) \right)^{1-\gamma}}{1-\gamma} \exp( \theta
+  \phi(h) ) + \mu \phi(h) \\ \phi(h) &= \left\{
+  \begin{array}{ll} 0 & h=0 \\ \mbox{phival} \in (0,1) &
+  h=1 \\ 1 & h=2 \end{array} \right. \\ \mbox{params} &=
+  \left( \gamma, \alpha, \theta, \mbox{phival}, \mu
+  \right)\\ & \hspace{1em}j = 1,2,\dots,m \\ &
+  \hspace{1em}l_1 = 0, l_m=1, l_j < l_{j+1} \end{array}}{
+  u(c,l,h) = (c * exp(alpha * l) )^1-gamma / (1-gamma) *
+  exp( theta * phi(h) ) + mu * phi(h), phi(h) = 0 if h=0,
+  phi(h) = phival if h=1, phi(h) = 1 if h=2 }
 }
 \examples{
 n = 5    # number of states

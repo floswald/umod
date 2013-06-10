@@ -1,0 +1,72 @@
+\name{util_module_file}
+\alias{util_module_file}
+\title{C++ module for computation of V = U + b*EV(0)}
+\usage{
+  util_module_file(cashR, EVR, hsizeR, laborR, par)
+}
+\arguments{
+  \item{cashR}{numeric matrix \code{(n,m)} of cash holdings
+  conditional on labor supply (that's why \code{m}
+  columns)}
+
+  \item{EVR}{numeric matrix \code{(n,1)} representing
+  expected future value at tomorrow's assets = 0}
+
+  \item{hsizeR}{vector \code{(n,1)}}
+
+  \item{laborR}{vector \code{(m,1)}, basically
+  \code{seq(from=0,to=1,length=m)}}
+
+  \item{theta}{elasticity of substitution between c and h}
+
+  \item{phival}{value of relative utility difference flat
+  vs house}
+
+  \item{mu}{weight on additive utility premium}
+
+  \item{gamma}{coefficient of relative risk aversion}
+
+  \item{cutoff}{minimum level of consumption. below cutoff,
+  u(c) is quadratically approximated.}
+
+  \item{alpha}{coefficient on labor}
+}
+\value{
+  list with elements \item{values}{\code{(n,m)} matrix of
+  conditional value functions. column i is V_i.}
+  \item{dchoiceL}{\code{(n,1)} vector indexing discrete
+  choice at each state.} \item{maxL}{\code{(n,1)} vector of
+  maximal value. maxL = max_d V_d.}
+}
+\description{
+  computes value functions for \code{m} discrete labor
+  supply choices when there is no savings choice. The
+  current implementation computes the following functional
+  form for the utility function: \deqn{\begin{array}{ll}
+  u(c,l_j,h) &= \frac{\left(c \exp( \alpha l_j )
+  \right)^{1-\gamma}}{1-\gamma} \exp( \theta \phi(h) ) +
+  \mu \phi(h) \\ \phi(h) &= \left\{ \begin{array}{ll} 0 &
+  h=0 \\ \mbox{phival} \in (0,1) & h=1 \\ 1 & h=2
+  \end{array} \right. \\ \mbox{params} &= \left( \gamma,
+  \alpha, \theta, \mbox{phival}, \mu \right)\\ &
+  \hspace{1em}j = 1,2,\dots,m \\ & \hspace{1em}l_1 = 0,
+  l_m=1, l_j < l_{j+1} \end{array}}{ u(c,l,h) = (c *
+  exp(alpha * l) )^1-gamma / (1-gamma) * exp( theta *
+  phi(h) ) + mu * phi(h), phi(h) = 0 if h=0, phi(h) =
+  phival if h=1, phi(h) = 1 if h=2 }
+}
+\examples{
+n = 5    # number of states
+m = 3    # number of discrete labor choices by state
+cash   <- matrix(1:n,n,m)
+cash   <- cash + matrix(0:2,n,m,byrow=TRUE)
+labo   <- seq(from=0,to=1,length=m)
+EV     <- log(1:n)
+hsize  <- sample(0:2,size=n,replace=TRUE)
+pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
+res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
+}
+\author{
+  Florian Oswald <florian.oswald@gmail.com>
+}
+

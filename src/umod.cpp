@@ -9,9 +9,24 @@
 
 using namespace Rcpp;
 
-//' C++ module for computation of V = U + b*EV
+//' C++ module for computation of V = max_s U + b*EV(s)
 //'
-//' computes value functions for \code{m} discrete labor supply choices. no time separability assumed, i.e. labor supply is not implied by current resources. computes V on \code{n} states.
+//' computes value functions for \code{m} discrete labor supply choices. no time separability assumed, i.e. labor supply is not implied by current resources. computes V on \code{n} states. 
+//' The current implementation computes the following functional form for the utility function:
+//' \deqn{\begin{array}{ll}
+//' u(c,l_j,h) &= \frac{\left(c \exp( \alpha l_j ) \right)^{1-\gamma}}{1-\gamma} \exp( \theta \phi(h) ) + \mu \phi(h) \\
+//' \phi(h) &= \left\{
+//' 	\begin{array}{ll}
+//' 	0                       &   h=0 \\
+//' 	\mbox{phival} \in (0,1) &   h=1 \\
+//' 	1                       &   h=2 
+//' 	\end{array}
+//' 	\right. \\
+//' \mbox{params} &= \left( \gamma, \alpha, \theta, \mbox{phival}, \mu \right)\\
+//'  & \hspace{1em}j = 1,2,\dots,m \\
+//'  & \hspace{1em}l_1 = 0, l_m=1, l_j < l_{j+1} 
+//' \end{array}}{ u(c,l,h) = (c * exp(alpha * l) )^1-gamma / (1-gamma) * exp( theta * phi(h) ) + mu * phi(h), phi(h) = 0 if h=0, phi(h) = phival if h=1, phi(h) = 1 if h=2 }
+//'
 //' @param cashR numeric matrix \code{(n,m)} of cash holdings conditional on labor supply (that's why \code{m} columns)
 //' @param saveR numeric matrix \code{(n,k)} of savings options. k < n.
 //' @param EVR numeric matrix \code{(n,k)} representing expected future value at each state,choice combination
@@ -177,6 +192,117 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
   // return vectors at optimal discrete choice: don't return conditional policy functions
   
 	Rcpp::List list = Rcpp::List::create( _["values"] = tmpy, _["saving"] = tmps, _["cons"] = tmpc, _["dchoiceL"] = retiD, _["maxL"] = retV);
+	return list;
+}
+
+
+
+//' C++ module for computation of V = U + b*EV(0)
+//'
+//' computes value functions for \code{m} discrete labor supply choices when there is no savings choice.
+//' The current implementation computes the following functional form for the utility function:
+//' \deqn{\begin{array}{ll}
+//' u(c,l_j,h) &= \frac{\left(c \exp( \alpha l_j ) \right)^{1-\gamma}}{1-\gamma} \exp( \theta \phi(h) ) + \mu \phi(h) \\
+//' \phi(h) &= \left\{
+//' 	\begin{array}{ll}
+//' 	0                       &   h=0 \\
+//' 	\mbox{phival} \in (0,1) &   h=1 \\
+//' 	1                       &   h=2 
+//' 	\end{array}
+//' 	\right. \\
+//' \mbox{params} &= \left( \gamma, \alpha, \theta, \mbox{phival}, \mu \right)\\
+//'  & \hspace{1em}j = 1,2,\dots,m \\
+//'  & \hspace{1em}l_1 = 0, l_m=1, l_j < l_{j+1} 
+//' \end{array}}{ u(c,l,h) = (c * exp(alpha * l) )^1-gamma / (1-gamma) * exp( theta * phi(h) ) + mu * phi(h), phi(h) = 0 if h=0, phi(h) = phival if h=1, phi(h) = 1 if h=2 }
+//'
+//' @param cashR numeric matrix \code{(n,m)} of cash holdings conditional on labor supply (that's why \code{m} columns)
+//' @param EVR numeric matrix \code{(n,1)} representing expected future value at tomorrow's assets = 0
+//' @param hsizeR vector \code{(n,1)}
+//' @param laborR vector \code{(m,1)}, basically \code{seq(from=0,to=1,length=m)}
+//' @param theta elasticity of substitution between c and h
+//' @param phival value of relative utility difference flat vs house
+//' @param mu weight on additive utility premium
+//' @param gamma coefficient of relative risk aversion
+//' @param cutoff minimum level of consumption. below cutoff, u(c) is quadratically approximated.
+//' @param alpha coefficient on labor
+//' @return list with elements
+//' \item{values}{\code{(n,m)} matrix of conditional value functions. column i is V_i.}
+//' \item{dchoiceL}{\code{(n,1)} vector indexing discrete choice at each state.}
+//' \item{maxL}{\code{(n,1)} vector of maximal value. maxL = max_d V_d.}
+//' @author Florian Oswald <florian.oswald@@gmail.com>
+//' @examples
+//' n = 5    # number of states
+//' m = 3    # number of discrete labor choices by state
+//' cash   <- matrix(1:n,n,m)
+//' cash   <- cash + matrix(0:2,n,m,byrow=TRUE)
+//' labo   <- seq(from=0,to=1,length=m)
+//' EV     <- log(1:n)
+//' hsize  <- sample(0:2,size=n,replace=TRUE)
+//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
+//' res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
+// [[Rcpp::export]]
+List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par){
+
+    const int n  = cashR.nrow();   // number of states
+	const int m  = cashR.ncol();	// number of discrete choices
+
+	// some input checks
+	if (n != EVR.nrow()){
+		throw Rcpp::exception( "util_module: EVR not equal rows as cashR");
+		return R_NilValue;
+	} 
+  if (n != hsizeR.size()){
+		throw Rcpp::exception( "util_module: hsizeR not same number of rows as cashR");
+		return R_NilValue;
+	} 
+  // remark: current structure forces us to have n = k. if that changes in the future, this module can handle it.
+
+	// map to R to arma
+	arma::mat cash(cashR.begin(), n, m, false);	// advanced constructor. no copying.
+	arma::mat EV(EVR.begin(), n, 1, false);	
+	arma::vec labor(laborR.begin(),m,false);
+	arma::vec hsize(hsizeR.begin(),n,false);
+	// Rcpp::List par( par_ ) ;
+
+	// allocate tmpcash, utility, and W matrices
+	arma::mat tmpcash(n,1);
+	arma::mat util(n,1);
+	arma::mat W(n,1);
+
+	// allocate indicator objects if need to subset
+	arma::rowvec tmpvec3(m);	// for discrete choice
+	arma::uword j;
+
+	// allocate out objects 
+	arma::mat tmpy(n,m);	// maximal value for each discrete choice (value)
+	arma::uvec retiD(n);		// index of optimal discrete choice (index)
+    arma::vec retV(n);		// value of optimal discrete choice 
+  
+
+	// loop over discrete choices
+	for (int i=0;i<m;i++){
+
+		// get consumption at each current labor supply choice
+		tmpcash = cash.col(i);
+		// get utility
+		util    = ufun_discreteL( tmpcash, par, hsize, labor(i) );
+		// get lifetime utility
+		W       = util + EV;
+
+		// put into return object at discrete choice column i
+		tmpy.col(i)  = W;
+	}
+
+	// find optimal discrete choice
+	for (int irow=0; irow<n; irow++){
+		tmpvec3     = tmpy.row(irow);
+		retV(irow)  = tmpvec3.max( j );
+		retiD(irow) = j + 1; // record discrete choice as 1-based index.
+	}
+
+  // return vectors at optimal discrete choice: don't return conditional policy functions
+  
+	Rcpp::List list = Rcpp::List::create( _["values"] = tmpy, _["dchoiceL"] = retiD, _["maxL"] = retV);
 	return list;
 }
 

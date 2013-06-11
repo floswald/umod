@@ -4,6 +4,7 @@
 
 #include <RcppArmadillo.h>
 #include <Rcpp.h>
+#include <Rcpp/Benchmark/Timer.h>
 
 #include "ufuns.h"
 
@@ -67,6 +68,9 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool b){
 
+   // start timer
+   Timer timer; 
+
     const int n  = cashR.nrow();   // number of states
 	const int m  = cashR.ncol();	// number of discrete choices
 	const int k  = saveR.ncol();   // number of savings choices
@@ -89,6 +93,9 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 		return R_NilValue;
 	} 
   // remark: current structure forces us to have n = k. if that changes in the future, this module can handle it.
+
+
+  timer.step("initial checks");
 
 	// map to R to arma
 	arma::mat cash(cashR.begin(), n, m, false);	// advanced constructor. no copying.
@@ -124,20 +131,26 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 	arma::vec y(n);
 	arma::rowvec tmpvec(k);
 
+
+	timer.step("allocate memory");
 	
 	// loop over discrete choices
 	for (int i=0;i<m;i++){
 
+   // in-loop timer
 		y.zeros();
 
 		// fill tmp with copies of cash
 		tmpcash = repmat(cash.col(i),1,k);
 		// get consumption at each savings choice
 		tmpcash = tmpcash - save;
+		if (i==0) timer.step("allocate inloop-memory");
 		// get utility
 		util    = ufun_discreteL( tmpcash, par, hsize, labor(i) );
 		// get lifetime utility
 		W       = util + EV;
+		if (i==0) timer.step("compute utility inloop");
+
 
 		// maximize
 		// loop over rows of W and find maximal value and it's index for each row.
@@ -175,10 +188,13 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 				tmps(irow,i) = save(irow,j);	// savings matrix is the same for all discrete labor choices
 		//		iy(irow)    = j + 1; // go to 1 based indices we don't even need those indices anymore.
 			}
+		if (i==0) timer.step("maximize by row");
 		}
 		// put into return object at discrete choice column i
 		tmpy.col(i)  = y;
 	}
+
+	timer.step("loop dchoice and maximize");
 
 	// find optimal discrete choice
 	for (int irow=0; irow<n; irow++){
@@ -189,9 +205,11 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 		retiD(irow) = j + 1; // record discrete choice as 1-based index.
 	}
 
+	timer.step("find optimal discrete choice");
+
   // return vectors at optimal discrete choice: don't return conditional policy functions
   
-	Rcpp::List list = Rcpp::List::create( _["values"] = tmpy, _["saving"] = tmps, _["cons"] = tmpc, _["dchoiceL"] = retiD, _["maxL"] = retV);
+	Rcpp::List list = Rcpp::List::create( _["values"] = tmpy, _["saving"] = tmps, _["cons"] = tmpc, _["dchoiceL"] = retiD, _["maxL"] = retV, _["timer"]=timer);
 	return list;
 }
 

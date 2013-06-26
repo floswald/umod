@@ -2,7 +2,7 @@
 \alias{util_module_file}
 \title{C++ module for computation of V = U + b*EV(0)}
 \usage{
-  util_module_file(cashR, EVR, hsizeR, laborR, par)
+  util_module_file(cashR, EVR, hsizeR, laborR, par, quad)
 }
 \arguments{
   \item{cashR}{numeric matrix \code{(n,m)} of cash holdings

@@ -2,7 +2,8 @@
 \alias{util_module}
 \title{C++ module for computation of V = max_s U + b*EV(s)}
 \usage{
-  util_module(cashR, saveR, EVR, hsizeR, laborR, par, b)
+  util_module(cashR, saveR, EVR, hsizeR, laborR, par, b,
+    quad)
 }
 \arguments{
   \item{cashR}{numeric matrix \code{(n,m)} of cash holdings
@@ -24,6 +25,10 @@
   savings matrix imposing some borrowing constraint. if
   b==FALSE, no NA checking is done and results will be
   incorrect.}
+
+  \item{quad}{boolean indicator equal TRUE if you want a
+  quadratic approximation for negative consumption values.
+  otherwise very small neg value.}
 
   \item{theta}{elasticity of substitution between c and h}
 
@@ -78,13 +83,13 @@ saving <- matrix(seq(from=0,to=8,length=k),n,k,byrow=TRUE)
 EV     <- log(outer(1:n,1:n))
 hsize  <- sample(0:2,size=n,replace=TRUE)
 pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
-res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE)
+res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE,quad=TRUE)
 ##
 ## work with borrowing constraint in savings matrix: all saving less than x inadmissible
 ##
 saving[1,1:3] <-NA	# all savings less than element c(1,4) are illegal in row 1
-res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE) # WRONG
-res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=TRUE) # RIGHT
+res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE,quad=TRUE) # WRONG
+res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=TRUE,quad=TRUE) # RIGHT
 }
 \author{
   Florian Oswald <florian.oswald@gmail.com>

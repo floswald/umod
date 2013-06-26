@@ -56,9 +56,10 @@ vec u_neg(vec c,double cuto,double lab,vec h,double alph,double gamm){
 //' \item{gamma}{coefficient of relative risk aversion}
 //' \item{cutoff}{minimum level of consumption. below cutoff, u(c) is quadratically approximated.}
 //' \item{alpha}{coefficient on labor}
+//' \item{quad}{boolean TRUE if quadratic approx for neg cons required.}
 //' }
 //' @return numeric matrix of utility values 
-mat ufun_discreteL(mat Res, Rcpp::List par, vec hsize, double labor){
+mat ufun_discreteL(mat Res, Rcpp::List par, vec hsize, double labor,bool quad){
 
 	uword n = Res.n_rows;
 	uword m = Res.n_cols;
@@ -104,7 +105,14 @@ mat ufun_discreteL(mat Res, Rcpp::List par, vec hsize, double labor){
 
 	// calculate utility in each case
 	vec upos = u_pos(posres,labor,posh,alpha,gamma);
-	vec uneg = u_neg(negres,cutoff,labor,negh,alpha,gamma);
+  vec uneg(negres);
+  
+  if (quad) {
+    uneg = u_neg(negres,cutoff,labor,negh,alpha,gamma);  
+  } else {
+    uneg.fill(-1.0e9);
+  }
+	
 
 	// reassemble vectors from pos/neg
 	util.elem(ipos) = upos;

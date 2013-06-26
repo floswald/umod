@@ -34,6 +34,7 @@ using namespace Rcpp;
 //' @param hsizeR vector \code{(n,1)}
 //' @param laborR vector \code{(m,1)}, basically \code{seq(from=0,to=1,length=m)}
 //' @param b boolean indicator equal TRUE if you have NAs in savings matrix imposing some borrowing constraint. if b==FALSE, no NA checking is done and results will be incorrect.
+//' @param quad boolean indicator equal TRUE if you want a quadratic approximation for negative consumption values. otherwise very small neg value.
 //' @param theta elasticity of substitution between c and h
 //' @param phival value of relative utility difference flat vs house
 //' @param mu weight on additive utility premium
@@ -58,15 +59,15 @@ using namespace Rcpp;
 //' EV     <- log(outer(1:n,1:n))
 //' hsize  <- sample(0:2,size=n,replace=TRUE)
 //' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
-//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE)
+//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE,quad=TRUE)
 //' ##
 //' ## work with borrowing constraint in savings matrix: all saving less than x inadmissible
 //' ##
 //' saving[1,1:3] <-NA	# all savings less than element c(1,4) are illegal in row 1
-//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE) # WRONG
-//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=TRUE) # RIGHT
+//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE,quad=TRUE) # WRONG
+//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=TRUE,quad=TRUE) # RIGHT
 // [[Rcpp::export]]
-List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool b){
+List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool b, bool quad){
 
    // start timer
    Timer timer; 
@@ -146,7 +147,7 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 		tmpcash = tmpcash - save;
 		if (i==0) timer.step("allocate inloop-memory");
 		// get utility
-		util    = ufun_discreteL( tmpcash, par, hsize, labor(i) );
+		util    = ufun_discreteL( tmpcash, par, hsize, labor(i), quad );
 		// get lifetime utility
 		W       = util + EV;
 		if (i==0) timer.step("compute utility inloop");
@@ -259,7 +260,7 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 //' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
 //' res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
 // [[Rcpp::export]]
-List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par){
+List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool quad){
 
     const int n  = cashR.nrow();   // number of states
 	const int m  = cashR.ncol();	// number of discrete choices
@@ -303,7 +304,7 @@ List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsiz
 		// get consumption at each current labor supply choice
 		tmpcash = cash.col(i);
 		// get utility
-		util    = ufun_discreteL( tmpcash, par, hsize, labor(i) );
+		util    = ufun_discreteL( tmpcash, par, hsize, labor(i),quad );
 		// get lifetime utility
 		W       = util + EV;
 

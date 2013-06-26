@@ -25,6 +25,7 @@
 #' @param hsizeR vector \code{(n,1)}
 #' @param laborR vector \code{(m,1)}, basically \code{seq(from=0,to=1,length=m)}
 #' @param b boolean indicator equal TRUE if you have NAs in savings matrix imposing some borrowing constraint. if b==FALSE, no NA checking is done and results will be incorrect.
+#' @param quad boolean indicator equal TRUE if you want a quadratic approximation for negative consumption values. otherwise very small neg value.
 #' @param theta elasticity of substitution between c and h
 #' @param phival value of relative utility difference flat vs house
 #' @param mu weight on additive utility premium
@@ -49,15 +50,15 @@
 #' EV     <- log(outer(1:n,1:n))
 #' hsize  <- sample(0:2,size=n,replace=TRUE)
 #' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
-#' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE)
+#' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE,quad=TRUE)
 #' ##
 #' ## work with borrowing constraint in savings matrix: all saving less than x inadmissible
 #' ##
 #' saving[1,1:3] <-NA	# all savings less than element c(1,4) are illegal in row 1
-#' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE) # WRONG
-#' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=TRUE) # RIGHT
-util_module <- function(cashR, saveR, EVR, hsizeR, laborR, par, b) {
-    .Call('umod_util_module', PACKAGE = 'umod', cashR, saveR, EVR, hsizeR, laborR, par, b)
+#' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE,quad=TRUE) # WRONG
+#' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=TRUE,quad=TRUE) # RIGHT
+util_module <- function(cashR, saveR, EVR, hsizeR, laborR, par, b, quad) {
+    .Call('umod_util_module', PACKAGE = 'umod', cashR, saveR, EVR, hsizeR, laborR, par, b, quad)
 }
 
 #' C++ module for computation of V = U + b*EV(0)
@@ -103,7 +104,7 @@ util_module <- function(cashR, saveR, EVR, hsizeR, laborR, par, b) {
 #' hsize  <- sample(0:2,size=n,replace=TRUE)
 #' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
 #' res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
-util_module_file <- function(cashR, EVR, hsizeR, laborR, par) {
-    .Call('umod_util_module_file', PACKAGE = 'umod', cashR, EVR, hsizeR, laborR, par)
+util_module_file <- function(cashR, EVR, hsizeR, laborR, par, quad) {
+    .Call('umod_util_module_file', PACKAGE = 'umod', cashR, EVR, hsizeR, laborR, par, quad)
 }
 

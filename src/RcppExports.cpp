@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // util_module
-List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool b);
-RcppExport SEXP umod_util_module(SEXP cashRSEXP, SEXP saveRSEXP, SEXP EVRSEXP, SEXP hsizeRSEXP, SEXP laborRSEXP, SEXP parSEXP, SEXP bSEXP) {
+List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool b, bool quad);
+RcppExport SEXP umod_util_module(SEXP cashRSEXP, SEXP saveRSEXP, SEXP EVRSEXP, SEXP hsizeRSEXP, SEXP laborRSEXP, SEXP parSEXP, SEXP bSEXP, SEXP quadSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     NumericMatrix cashR = Rcpp::as<NumericMatrix >(cashRSEXP);
@@ -18,13 +18,14 @@ BEGIN_RCPP
     NumericVector laborR = Rcpp::as<NumericVector >(laborRSEXP);
     List par = Rcpp::as<List >(parSEXP);
     bool b = Rcpp::as<bool >(bSEXP);
-    List __result = util_module(cashR, saveR, EVR, hsizeR, laborR, par, b);
+    bool quad = Rcpp::as<bool >(quadSEXP);
+    List __result = util_module(cashR, saveR, EVR, hsizeR, laborR, par, b, quad);
     return Rcpp::wrap(__result);
 END_RCPP
 }
 // util_module_file
-List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par);
-RcppExport SEXP umod_util_module_file(SEXP cashRSEXP, SEXP EVRSEXP, SEXP hsizeRSEXP, SEXP laborRSEXP, SEXP parSEXP) {
+List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool quad);
+RcppExport SEXP umod_util_module_file(SEXP cashRSEXP, SEXP EVRSEXP, SEXP hsizeRSEXP, SEXP laborRSEXP, SEXP parSEXP, SEXP quadSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     NumericMatrix cashR = Rcpp::as<NumericMatrix >(cashRSEXP);
@@ -32,7 +33,8 @@ BEGIN_RCPP
     NumericVector hsizeR = Rcpp::as<NumericVector >(hsizeRSEXP);
     NumericVector laborR = Rcpp::as<NumericVector >(laborRSEXP);
     List par = Rcpp::as<List >(parSEXP);
-    List __result = util_module_file(cashR, EVR, hsizeR, laborR, par);
+    bool quad = Rcpp::as<bool >(quadSEXP);
+    List __result = util_module_file(cashR, EVR, hsizeR, laborR, par, quad);
     return Rcpp::wrap(__result);
 END_RCPP
 }

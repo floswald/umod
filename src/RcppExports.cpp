@@ -38,3 +38,15 @@ BEGIN_RCPP
     return Rcpp::wrap(__result);
 END_RCPP
 }
+// ufun_Attanasio
+NumericMatrix ufun_Attanasio(NumericMatrix ResR, NumericVector sR, List par);
+RcppExport SEXP umod_ufun_Attanasio(SEXP ResRSEXP, SEXP sRSEXP, SEXP parSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    NumericMatrix ResR = Rcpp::as<NumericMatrix >(ResRSEXP);
+    NumericVector sR = Rcpp::as<NumericVector >(sRSEXP);
+    List par = Rcpp::as<List >(parSEXP);
+    NumericMatrix __result = ufun_Attanasio(ResR, sR, par);
+    return Rcpp::wrap(__result);
+END_RCPP
+}

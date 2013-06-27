@@ -325,3 +325,85 @@ List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsiz
 	return list;
 }
 
+
+
+//' Utility Function from Attanasio et al
+//'
+//' computes utility over consumption and housing
+//' @param Res resources aka consumption
+//' @param s vector of house sizes
+//' @param par list of parameters
+//' @examples
+//' n = 5    # number of states
+//' m = 7    # number of savings choices
+//' cash   <- matrix(1:(n*m),n,m)
+//' hsize  <- sample(0:2,size=n,replace=TRUE)
+//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
+//' res <- ufun_Attanasio(ResR=cash, sR=hsize, par=pars)
+// [[Rcpp::export]]
+NumericMatrix ufun_Attanasio( NumericMatrix ResR, NumericVector sR, List par){
+
+	const int n = ResR.nrow();
+	const int m = ResR.ncol();
+
+	if (sR.size() != n){
+		throw Rcpp::exception( "umod::ufun_Attanasio: hsize and Res are not equal rows!" );
+		return R_NilValue;
+	}
+
+	// map R to arma
+	mat Res(ResR.begin(),n,m,false);
+	vec hsize(sR.begin(),n,false);
+
+
+	//par_ = list(gamma,theta,phival,mu,cutoff)
+
+	// now get parameters out of lists par 
+	double gamma = Rcpp::as<double>(par["gamma"]);
+	double theta = Rcpp::as<double>(par["theta"]);
+	double cutoff = Rcpp::as<double>(par["cutoff"]);
+	double phival = Rcpp::as<double>(par["phival"]);
+	double mu = Rcpp::as<double>(par["mu"]);
+	double mgamma = 1-gamma;
+	double imgamma = 1/mgamma;
+
+	vec phivals;
+	phivals << 0 << phival << 1 << endr;
+	vec phivec(hsize.size());
+	for (int i=0; i<hsize.size(); i++) {
+		phivec(i) = phivals( hsize( i ) );
+	}
+
+	//setup output matrix
+	mat ret(Res);
+	ret.zeros();
+	double diff, g, u, grad, hess;
+	rowvec tmpvec(m);
+
+	// compute utility from non-durable consumption
+	for (int i=0; i<n; i++){
+		if( Res(i,m-1) < cutoff ){	// check if the last entry in row i is below cutoff. if last is not, none is. Res = c - savings, savings increase to the right.
+			for (int j=0; j<m; j++){
+				if( Res(i,j) < cutoff ){ // compute approximated utility at all entries of row i below cutoff
+					g        = pow(cutoff,mgamma);	 
+					grad     = g / cutoff;   
+					hess     = -gamma * grad / cutoff;	
+					diff     = Res(i,j) - cutoff;
+					ret(i,j) = imgamma*g + (grad * diff) + 0.5 * hess * pow(diff,2);
+				} else {
+					g = pow(Res(i,j),mgamma);	  
+					ret(i,j) = imgamma * g;	    
+				}
+			}
+		} else {
+			tmpvec = pow(Res.row(i),mgamma);   // equation (6)
+			ret.row(i) = imgamma * tmpvec;    // equation (11)
+		}
+	}
+	// add additive premium if houseing is of right size
+	mat phimat = repmat(phivec,1,m);
+	mat hfac = exp( theta * phimat);
+	ret = ret % hfac;
+	ret = ret + mu * phimat;
+	return wrap(ret);
+}

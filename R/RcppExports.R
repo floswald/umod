@@ -108,3 +108,20 @@ util_module_file <- function(cashR, EVR, hsizeR, laborR, par, quad) {
     .Call('umod_util_module_file', PACKAGE = 'umod', cashR, EVR, hsizeR, laborR, par, quad)
 }
 
+#' Utility Function from Attanasio et al
+#'
+#' computes utility over consumption and housing
+#' @param Res resources aka consumption
+#' @param s vector of house sizes
+#' @param par list of parameters
+#' @examples
+#' n = 5    # number of states
+#' m = 7    # number of savings choices
+#' cash   <- matrix(1:(n*m),n,m)
+#' hsize  <- sample(0:2,size=n,replace=TRUE)
+#' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
+#' res <- ufun_Attanasio(ResR=cash, sR=hsize, par=pars)
+ufun_Attanasio <- function(ResR, sR, par) {
+    .Call('umod_ufun_Attanasio', PACKAGE = 'umod', ResR, sR, par)
+}
+

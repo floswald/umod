@@ -1,2 +1,6 @@
 useDynLib(umod)
-exportPattern("^[[:alpha:]]+")
+import(Rcpp)
+import(RcppArmadillo)
+export(util_module)
+export(util_module_file)
+export(ufun_Attanasio)

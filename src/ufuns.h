@@ -29,7 +29,7 @@ inline void handler(int sig) {
 
   // print out all the frames to stderr
   fprintf(stderr, "Error: signal %d:\n", sig);
-  backtrace_symbols_fd(array, size, STDERR_FILE);
+  backtrace_symbols_fd(array, size, STDERR_FILENO);
   //backtrace_symbols(array, size);
   exit(1);
 }

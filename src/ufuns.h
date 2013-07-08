@@ -20,7 +20,7 @@ using namespace Rcpp;
 // to stdout
 
 // Define Error Handler
-void handler(int sig) {
+inline void handler(int sig) {
   void *array[10];
   size_t size;
 

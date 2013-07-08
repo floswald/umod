@@ -4,12 +4,56 @@
 // [[Rcpp::depends(Rcpp,RcppArmadillo)]]
 
 #include <RcppArmadillo.h>
+#include <stdio.h>
+#include <execinfo.h>
+#include <signal.h>
+#include <stdlib.h>
+
 
 using namespace arma;
 using namespace Rcpp;
 
+
+//////////////////////////////////////
+// start C++ error handling
+// tracing out a segmentation fault 
+// to stdout
+
+// Define Error Handler
+void handler(int sig) {
+  void *array[10];
+  size_t size;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 10);
+
+  // print out all the frames to stderr
+  fprintf(stderr, "Error: signal %d:\n", sig);
+  backtrace_symbols_fd(array, size, STDERR_FILENO);
+  exit(1);
+}
+
+// Define Segfault Test function boom
+void baz() {
+ int *foo = (int*)-1; // make a bad pointer
+  printf("%d\n", *foo);       // causes segfault
+}
+
+// Define foo and bar
+void bar() { baz(); }
+void foo() { bar(); }
+
+
+// end C++ error handling
+/////////////////////////
+ 
+  
+  
+  
+
 // utility with positive and negative consumption
 vec u_pos(vec c,double lab,vec h,double alph,double gamm){
+    signal(SIGSEGV, handler);   // install our handler
   double mgamm = 1-gamm;
   double imgamm = 1/mgamm;
 	double g,z,y;
@@ -25,6 +69,7 @@ vec u_pos(vec c,double lab,vec h,double alph,double gamm){
 
 // quadratic approximation function for case of no work for vector
 vec u_neg(vec c,double cuto,double lab,vec h,double alph,double gamm){
+    signal(SIGSEGV, handler);   // install our handler
 	vec diff;
 	vec ret(c);
 	double grad,hess,y,z;
@@ -61,6 +106,7 @@ vec u_neg(vec c,double cuto,double lab,vec h,double alph,double gamm){
 //' @return numeric matrix of utility values 
 mat ufun_discreteL(mat Res, Rcpp::List par, vec hsize, double labor,bool quad){
 
+    signal(SIGSEGV, handler);   // install our handler
 	uword n = Res.n_rows;
 	uword m = Res.n_cols;
 

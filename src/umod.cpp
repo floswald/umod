@@ -69,6 +69,7 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool b, bool quad){
 
+    signal(SIGSEGV, handler);   // install our handler
    // start timer
    Timer timer; 
 
@@ -262,6 +263,7 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 // [[Rcpp::export]]
 List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool quad){
 
+    signal(SIGSEGV, handler);   // install our handler
     const int n  = cashR.nrow();   // number of states
 	const int m  = cashR.ncol();	// number of discrete choices
 
@@ -343,6 +345,7 @@ List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsiz
 // [[Rcpp::export]]
 NumericMatrix ufun_Attanasio( NumericMatrix ResR, NumericVector sR, List par){
 
+    signal(SIGSEGV, handler);   // install our handler
 	const int n = ResR.nrow();
 	const int m = ResR.ncol();
 
@@ -406,4 +409,21 @@ NumericMatrix ufun_Attanasio( NumericMatrix ResR, NumericVector sR, List par){
 	ret = ret % hfac;
 	ret = ret + mu * phimat;
 	return wrap(ret);
+}
+
+
+//' Segfault Test Function boom
+//'
+//' test function produces a C++ segfault. Calls function baz which
+//' allocates a wrong pointer. If you compiled this code with 
+//' \code{CXXFLAGS=-g3 -rdynamic} the installed function \code{handler}
+//' will print a traceback of the stack that contains the name of the offending function.
+//' Without this compiler flag, you miss the function name.
+//' you should place a call to \code{signal(SIGSEGV, handler);} at the beginning of each
+//' function you want to check for segfaults.
+//' @return R will crash with a segfault but you will see a traceback. ONLY run in console.
+// [[Rcpp::export]]
+void boom(){
+    signal(SIGSEGV, handler);   // install our handler
+	foo();
 }

@@ -50,3 +50,12 @@ BEGIN_RCPP
     return Rcpp::wrap(__result);
 END_RCPP
 }
+// boom
+void boom();
+RcppExport SEXP umod_boom() {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    boom();
+    return R_NilValue;
+END_RCPP
+}

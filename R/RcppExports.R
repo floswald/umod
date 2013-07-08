@@ -125,3 +125,17 @@ ufun_Attanasio <- function(ResR, sR, par) {
     .Call('umod_ufun_Attanasio', PACKAGE = 'umod', ResR, sR, par)
 }
 
+#' Segfault Test Function boom
+#'
+#' test function produces a C++ segfault. Calls function baz which
+#' allocates a wrong pointer. If you compiled this code with 
+#' \code{CXXFLAGS=-g3 -rdynamic} the installed function \code{handler}
+#' will print a traceback of the stack that contains the name of the offending function.
+#' Without this compiler flag, you miss the function name.
+#' you should place a call to \code{signal(SIGSEGV, handler);} at the beginning of each
+#' function you want to check for segfaults.
+#' @return R will crash with a segfault but you will see a traceback. ONLY run in console.
+boom <- function() {
+    invisible(.Call('umod_boom', PACKAGE = 'umod'))
+}
+

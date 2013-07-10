@@ -63,8 +63,8 @@ cash   <- cash + matrix(0:2,n,m,byrow=TRUE)
 labo   <- seq(from=0,to=1,length=m)
 EV     <- log(1:n)
 hsize  <- sample(0:2,size=n,replace=TRUE)
-pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
-res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
+pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,tau=1)
+res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars,quad=TRUE)
 }
 \author{
   Florian Oswald <florian.oswald@gmail.com>

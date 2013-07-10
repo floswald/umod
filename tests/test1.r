@@ -15,10 +15,12 @@ labo   <- seq(from=0,to=1,length=m)
 saving <- matrix(seq(from=0,to=8,length=k),n,k,byrow=TRUE)
 EV     <- log(outer(1:n,1:n))
 hsize  <- sample(0:2,size=n,replace=TRUE)
-pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
+pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,tau=1)
+pars2   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,tau=0.5)
 
 
-res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE)
+res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE,quad=TRUE)
+res2 <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars2, b=FALSE,quad=TRUE)
 
 context("testing that C output is sane")
 test_that("res is a list",{

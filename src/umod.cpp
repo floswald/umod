@@ -133,6 +133,9 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 	arma::vec y(n);
 	arma::rowvec tmpvec(k);
 
+	// get consumption tax
+	double tau = Rcpp::as<double>(par["tau"]);
+
 
 	timer.step("allocate memory");
 	
@@ -146,6 +149,9 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 		tmpcash = repmat(cash.col(i),1,k);
 		// get consumption at each savings choice
 		tmpcash = tmpcash - save;
+
+		// apply the consumption tax
+		tmpcash = tmpcash * tau;
 		if (i==0) timer.step("allocate inloop-memory");
 		// get utility
 		util    = ufun_discreteL( tmpcash, par, hsize, labor(i), quad );
@@ -258,8 +264,8 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 //' labo   <- seq(from=0,to=1,length=m)
 //' EV     <- log(1:n)
 //' hsize  <- sample(0:2,size=n,replace=TRUE)
-//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
-//' res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
+//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,tau=1)
+//' res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars,quad=TRUE)
 // [[Rcpp::export]]
 List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool quad){
 
@@ -284,6 +290,10 @@ List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsiz
 	arma::vec labor(laborR.begin(),m,false);
 	arma::vec hsize(hsizeR.begin(),n,false);
 	// Rcpp::List par( par_ ) ;
+	
+	// get consumption tax
+	double tau = Rcpp::as<double>(par["tau"]);
+  cash = cash * tau;
 
 	// allocate tmpcash, utility, and W matrices
 	arma::mat tmpcash(n,1);
@@ -303,7 +313,7 @@ List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsiz
 	// loop over discrete choices
 	for (int i=0;i<m;i++){
 
-		// get consumption at each current labor supply choice
+		// get consumption at each current labor supply choice and apply cons tax
 		tmpcash = cash.col(i);
 		// get utility
 		util    = ufun_discreteL( tmpcash, par, hsize, labor(i),quad );

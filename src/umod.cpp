@@ -33,14 +33,16 @@ using namespace Rcpp;
 //' @param EVR numeric matrix \code{(n,k)} representing expected future value at each state,choice combination
 //' @param hsizeR vector \code{(n,1)}
 //' @param laborR vector \code{(m,1)}, basically \code{seq(from=0,to=1,length=m)}
-//' @param b boolean indicator equal TRUE if you have NAs in savings matrix imposing some borrowing constraint. if b==FALSE, no NA checking is done and results will be incorrect.
-//' @param quad boolean indicator equal TRUE if you want a quadratic approximation for negative consumption values. otherwise very small neg value.
 //' @param theta elasticity of substitution between c and h
 //' @param phival value of relative utility difference flat vs house
 //' @param mu weight on additive utility premium
 //' @param gamma coefficient of relative risk aversion
 //' @param cutoff minimum level of consumption. below cutoff, u(c) is quadratically approximated.
 //' @param alpha coefficient on labor
+//' @param quad boolean of whether neg cons quadratically approximated or not
+//' @param borrconst boolean of whether there are borrowing constraints built into the savings matrix
+//' @param myNA numerical value to be assigned to values with negative consumption (if quad == FALSE)
+//' @param tau numerical value of proportional consumption scaling. a value in [0,infty). used in welfare experiments
 //' @return list with elements
 //' \item{values}{\code{(n,m)} matrix of conditional value functions. column i is V_i.}
 //' \item{saving}{\code{(n,m)} matrix of conditional savings functions. column i is save_i.}
@@ -58,16 +60,16 @@ using namespace Rcpp;
 //' saving <- matrix(seq(from=0,to=8,length=k),n,k,byrow=TRUE)
 //' EV     <- log(outer(1:n,1:n))
 //' hsize  <- sample(0:2,size=n,replace=TRUE)
-//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6)
-//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE,quad=TRUE)
+//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,quad=FALSE,borrconst=FALSE,myNA=-1e9,tau=1)
+//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
 //' ##
 //' ## work with borrowing constraint in savings matrix: all saving less than x inadmissible
 //' ##
 //' saving[1,1:3] <-NA	# all savings less than element c(1,4) are illegal in row 1
-//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=FALSE,quad=TRUE) # WRONG
-//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars, b=TRUE,quad=TRUE) # RIGHT
+//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,quad=TRUE,borrconst=TRUE,myNA=-1e9,tau=1)
+//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars) 
 // [[Rcpp::export]]
-List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool b, bool quad){
+List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par){
 
     signal(SIGSEGV, handler);   // install our handler
    // start timer
@@ -135,6 +137,8 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 
 	// get consumption tax
 	double tau = Rcpp::as<double>(par["tau"]);
+	// get borrowing constraint switch
+	bool b   = Rcpp::as<bool>(par["borrconst"]);
 
 
 	timer.step("allocate memory");
@@ -154,7 +158,7 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 		tmpcash = tmpcash * tau;
 		if (i==0) timer.step("allocate inloop-memory");
 		// get utility
-		util    = ufun_discreteL( tmpcash, par, hsize, labor(i), quad );
+		util    = ufun_discreteL( tmpcash, par, hsize, labor(i) );
 		// get lifetime utility
 		W       = util + EV;
 		if (i==0) timer.step("compute utility inloop");
@@ -251,6 +255,10 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 //' @param gamma coefficient of relative risk aversion
 //' @param cutoff minimum level of consumption. below cutoff, u(c) is quadratically approximated.
 //' @param alpha coefficient on labor
+//' @param quad boolean of whether neg cons quadratically approximated or not
+//' @param borrconst boolean of whether there are borrowing constraints built into the savings matrix
+//' @param myNA numerical value to be assigned to values with negative consumption (if quad == FALSE)
+//' @param tau numerical value of proportional consumption scaling. a value in [0,infty). used in welfare experiments
 //' @return list with elements
 //' \item{values}{\code{(n,m)} matrix of conditional value functions. column i is V_i.}
 //' \item{dchoiceL}{\code{(n,1)} vector indexing discrete choice at each state.}
@@ -264,10 +272,10 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 //' labo   <- seq(from=0,to=1,length=m)
 //' EV     <- log(1:n)
 //' hsize  <- sample(0:2,size=n,replace=TRUE)
-//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,tau=1)
-//' res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars,quad=TRUE)
+//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,quad=FALSE,borrconst=FALSE,myNA=-1e9,tau=1)
+//' res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
 // [[Rcpp::export]]
-List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par, bool quad){
+List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par){
 
     signal(SIGSEGV, handler);   // install our handler
     const int n  = cashR.nrow();   // number of states
@@ -293,7 +301,7 @@ List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsiz
 	
 	// get consumption tax
 	double tau = Rcpp::as<double>(par["tau"]);
-  cash = cash * tau;
+	cash = cash * tau;
 
 	// allocate tmpcash, utility, and W matrices
 	arma::mat tmpcash(n,1);
@@ -316,7 +324,7 @@ List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsiz
 		// get consumption at each current labor supply choice and apply cons tax
 		tmpcash = cash.col(i);
 		// get utility
-		util    = ufun_discreteL( tmpcash, par, hsize, labor(i),quad );
+		util    = ufun_discreteL( tmpcash, par, hsize, labor(i) );
 		// get lifetime utility
 		W       = util + EV;
 

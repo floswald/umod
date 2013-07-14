@@ -103,9 +103,10 @@ vec u_neg(vec c,double cuto,double lab,vec h,double alph,double gamm){
 //' \item{cutoff}{minimum level of consumption. below cutoff, u(c) is quadratically approximated.}
 //' \item{alpha}{coefficient on labor}
 //' \item{quad}{boolean TRUE if quadratic approx for neg cons required.}
+//' \item{myNA}{numerical value for infeasible choice}
 //' }
 //' @return numeric matrix of utility values 
-mat ufun_discreteL(mat Res, Rcpp::List par, vec hsize, double labor,bool quad){
+mat ufun_discreteL(mat Res, Rcpp::List par, vec hsize, double labor){
 
     signal(SIGSEGV, handler);   // install our handler
 	uword n = Res.n_rows;
@@ -124,6 +125,8 @@ mat ufun_discreteL(mat Res, Rcpp::List par, vec hsize, double labor,bool quad){
 	double gamma     = Rcpp::as<double>(par["gamma"]);
 	double cutoff    = Rcpp::as<double>(par["cutoff"]);
 	double alpha     = Rcpp::as<double>(par["alpha"]);
+	double myNA      = Rcpp::as<double>(par["myNA"]);
+	bool quad        = Rcpp::as<bool>(par["quad"]);
 
 	vec phivals;
 	phivals << 0 << phival << 1 << endr;
@@ -157,7 +160,7 @@ mat ufun_discreteL(mat Res, Rcpp::List par, vec hsize, double labor,bool quad){
   if (quad) {
     uneg = u_neg(negres,cutoff,labor,negh,alpha,gamma);  
   } else {
-    uneg.fill(-1.0e9);
+    uneg.fill(myNA);
   }
 	
 

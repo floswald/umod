@@ -2,7 +2,7 @@
 \alias{util_module_file}
 \title{C++ module for computation of V = U + b*EV(0)}
 \usage{
-  util_module_file(cashR, EVR, hsizeR, laborR, par, quad)
+  util_module_file(cashR, EVR, hsizeR, laborR, par)
 }
 \arguments{
   \item{cashR}{numeric matrix \code{(n,m)} of cash holdings
@@ -30,6 +30,19 @@
   u(c) is quadratically approximated.}
 
   \item{alpha}{coefficient on labor}
+
+  \item{quad}{boolean of whether neg cons quadratically
+  approximated or not}
+
+  \item{borrconst}{boolean of whether there are borrowing
+  constraints built into the savings matrix}
+
+  \item{myNA}{numerical value to be assigned to values with
+  negative consumption (if quad == FALSE)}
+
+  \item{tau}{numerical value of proportional consumption
+  scaling. a value in [0,infty). used in welfare
+  experiments}
 }
 \value{
   list with elements \item{values}{\code{(n,m)} matrix of
@@ -63,8 +76,8 @@ cash   <- cash + matrix(0:2,n,m,byrow=TRUE)
 labo   <- seq(from=0,to=1,length=m)
 EV     <- log(1:n)
 hsize  <- sample(0:2,size=n,replace=TRUE)
-pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,tau=1)
-res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars,quad=TRUE)
+pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,quad=FALSE,borrconst=FALSE,myNA=-1e9,tau=1)
+res <- util_module_file(cashR=cash, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
 }
 \author{
   Florian Oswald <florian.oswald@gmail.com>

@@ -9,7 +9,6 @@
 #include <signal.h>
 #include <stdlib.h>
 
-
 using namespace arma;
 using namespace Rcpp;
 
@@ -68,6 +67,28 @@ vec u_pos(vec c,double lab,vec h,double alph,double gamm){
 	return ret;
 }
 
+// matrix utility
+mat u_mat(mat c,double lab,vec h,double alph,double gamm){
+    signal(SIGSEGV, handler);   // install our handler
+    double mgamm = 1-gamm;
+    double imgamm = 1/mgamm;
+	double g,z,y;
+	y      = pow( exp( alph * lab ), mgamm);
+	mat ret(c.n_rows,c.n_cols);
+	for (int i=0;i<c.n_rows;i++){
+
+		z      = y * h[i];
+
+		for (int j=0; j<c.n_cols;j++){
+
+			g        = pow( c(i,j) , mgamm);
+			ret(i,j) = imgamm * g * z;
+
+		}
+	}
+	return ret;
+}
+
 // quadratic approximation function for case of no work for vector
 vec u_neg(vec c,double cuto,double lab,vec h,double alph,double gamm){
     signal(SIGSEGV, handler);   // install our handler
@@ -106,19 +127,17 @@ vec u_neg(vec c,double cuto,double lab,vec h,double alph,double gamm){
 //' \item{myNA}{numerical value for infeasible choice}
 //' }
 //' @return numeric matrix of utility values 
-mat ufun_discreteL(mat Res, Rcpp::List par, vec hsize, double labor){
+mat ufun_discreteL(mat cons, Rcpp::List par, vec hsize, double labor){
 
     signal(SIGSEGV, handler);   // install our handler
-	uword n = Res.n_rows;
-	uword m = Res.n_cols;
+	uword n = cons.n_rows;
+	uword m = cons.n_cols;
 
-  // labor is a scalar
-
-	if ( hsize.n_elem != Res.n_rows){
-		throw std::runtime_error("ufun_discreteL:::error. hsize and Res are not conformable");
+	if ( hsize.n_elem != cons.n_rows){
+		throw std::runtime_error("ufun_discreteL:::error. hsize and cons are not conformable");
 	}
 
-	// extract elements from list par and make some paramters
+	// extract elements from list par
 	double theta     = Rcpp::as<double>(par["theta"]);
 	double phival    = Rcpp::as<double>(par["phival"]);
 	double mu        = Rcpp::as<double>(par["mu"]);
@@ -126,56 +145,36 @@ mat ufun_discreteL(mat Res, Rcpp::List par, vec hsize, double labor){
 	double cutoff    = Rcpp::as<double>(par["cutoff"]);
 	double alpha     = Rcpp::as<double>(par["alpha"]);
 	double myNA      = Rcpp::as<double>(par["myNA"]);
-	bool quad        = Rcpp::as<bool>(par["quad"]);
 
+	// construct the multiplicative housing factor from house size
 	vec phivals;
 	phivals << 0 << phival << 1 << endr;
 	vec phivec(hsize.size());
 	for (int i=0; i<hsize.n_elem; i++) {
 		phivec(i) = phivals( hsize( i ) );
 	}
+	vec hfac  = exp( theta * phivec );
 
 	// initiate return objects as zero
-	mat util(Res);
+	mat util(n,m);
 	util.zeros();
 
-	// prepare additive housing premium
-	mat phimat = repmat(phivec,1,m);
-	mat hfac = exp( theta * phimat);
+	// compute multiplicative part of utility at each consumption level
+	util      = u_mat( cons, labor, hfac, alpha, gamma );
 
-	// split Res according to cases:
-	//		- pos resouces
-	//		- neg resources
-	uvec ipos  = find( Res >= cutoff );
-	uvec ineg  = find( Res < cutoff );
-	vec posres = Res.elem( ipos );
-	vec negres = Res.elem( ineg );
-	vec posh   = hfac.elem( ipos );
-	vec negh   = hfac.elem( ineg );
-
-	// calculate utility in each case
-	vec upos = u_pos(posres,labor,posh,alpha,gamma);
-  vec uneg(negres);
-  
-  if (quad) {
-    uneg = u_neg(negres,cutoff,labor,negh,alpha,gamma);  
-  } else {
-    uneg.fill(myNA);
-  }
+	// find indices of negative consumptions
+	uvec ineg = find( cons < cutoff );
 	
+	// add additive premium 
+	util = util + mu * repmat(phivec,1,m);
 
-	// reassemble vectors from pos/neg
-	util.elem(ipos) = upos;
-
-	if (!(ineg.is_empty())){
-		util.elem(ineg) = uneg;
-	}
-
-	// add additive premium if houseing is of right size
-	util = util + mu * phimat;
+	// set infeasible choices to NA
+	util.elem(ineg) = myNA;
+	
 
 	return util;
 }
 
 
 #endif
+

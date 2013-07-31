@@ -9,7 +9,7 @@ Description: More about what it does (maybe more than one line)
 License: What Licence is it under ?
 Depends:
     Rcpp (>= 0.10.3),
-    RcppArmadillo
+    RcppArmadillo,
 LinkingTo: Rcpp, RcppArmadillo
 Collate:
     'RcppExports.R'

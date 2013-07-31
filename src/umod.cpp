@@ -79,6 +79,8 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 	const int m  = cashR.ncol();	// number of discrete choices
 	const int k  = saveR.ncol();   // number of savings choices
 
+	const bool idx = true;	// set to FALSE if you want to return savings VALUE instead of INDEX
+
 	// some input checks
 	if (n != saveR.nrow()){
 		throw Rcpp::exception( "util_module: saveR not equal rows as cashR");
@@ -121,17 +123,20 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 
 	// allocate out objects 
 	arma::mat tmpy(n,m);	// maximal value for each discrete choice (value)
-	arma::mat tmps(n,m);	// optimizing savings choice (value)
 	arma::mat tmpc(n,m);	// implied optimal consumption (value)
 	arma::uvec retiD(n);		// index of optimal discrete choice (index)
     arma::vec retV(n);		// value of optimal discrete choice 
+	if (idx) {
+		arma::umat tmps(n,m);
+	} else {
+		arma::mat tmps(n,m);	// optimizing savings choice (value)
+	}
   //arma::vec retC(n);		// cons at discrete choice 
 	//arma::vec retS(n);		// save at discrete choice
   
 
 	// allocate for maximization loop
 	arma::uword j;
-//	arma::uvec::fixed<n> iy;
 	arma::vec y(n);
 	arma::rowvec tmpvec(k);
 
@@ -148,6 +153,7 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 
    // in-loop timer
 		y.zeros();
+		iy.zeros();
 
 		// fill tmp with copies of cash
 		tmpcash = repmat(cash.col(i),1,k);
@@ -189,21 +195,26 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 			   tmpvec2 = tmpvec.subvec(r,k-1);
 			   y(irow) = tmpvec2.max(j);	// j is the uword recording the position of the maximal element
 			   tmpc(irow,i) = tmpcash(irow,j + r);
-			   tmps(irow,i) = save(irow,j + r);	// savings matrix is the same for all discrete labor choices
+			   if (idx) {
+				   tmps(irow,i,) = j + r + 1;
+			   } else {
+				   tmps(irow,i) = save(irow,j + r);	// savings matrix is the same for all discrete labor choices
+			   }
 			}
 		} else {
 			// there are no NAs in savings matrix, unrestricted choice
 			for (int irow=0; irow<n; irow++) {
 				tmpvec       = W.row(irow);
-				y(irow)      = tmpvec.max( j );
+				tmpy(irow,i) = tmpvec.max( j );
 				tmpc(irow,i) = tmpcash(irow,j);
-				tmps(irow,i) = save(irow,j);	// savings matrix is the same for all discrete labor choices
-		//		iy(irow)    = j + 1; // go to 1 based indices we don't even need those indices anymore.
+				if (idx) {
+					tmps(irow,i) = j + 1;
+				} else {
+					tmps(irow,i) = save(irow,j);
+				}
 			}
 		if (i==0) timer.step("maximize by row");
 		}
-		// put into return object at discrete choice column i
-		tmpy.col(i)  = y;
 	}
 
 	timer.step("loop dchoice and maximize");

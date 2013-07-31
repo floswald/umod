@@ -176,10 +176,8 @@ mat ufun_discreteL(mat cons, Rcpp::List par, vec hsize, double labor){
 		util.elem(ineg) = x;
 	}
 	
-
 	return util;
 }
 
 
 #endif
-

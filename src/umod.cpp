@@ -79,7 +79,6 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 	const int m  = cashR.ncol();	// number of discrete choices
 	const int k  = saveR.ncol();   // number of savings choices
 
-
 	// some input checks
 	if (n != saveR.nrow()){
 		throw Rcpp::exception( "util_module: saveR not equal rows as cashR");
@@ -198,6 +197,13 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 				tmpc(irow,i) = tmpcash(irow,j);
 				tmpis(irow,i) = j + 1;
 				tmps(irow,i) = save(irow,j);
+			}
+		if (i==0) timer.step("maximize by row");
+		}
+				y(irow)      = tmpvec.max( j );
+				tmpc(irow,i) = tmpcash(irow,j);
+				tmps(irow,i) = save(irow,j);	// savings matrix is the same for all discrete labor choices
+		//		iy(irow)    = j + 1; // go to 1 based indices we don't even need those indices anymore.
 			}
 		if (i==0) timer.step("maximize by row");
 		}

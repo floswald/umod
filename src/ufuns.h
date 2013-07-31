@@ -168,8 +168,13 @@ mat ufun_discreteL(mat cons, Rcpp::List par, vec hsize, double labor){
 	// add additive premium 
 	util = util + mu * repmat(phivec,1,m);
 
-	// set infeasible choices to NA
-	util.elem(ineg) = myNA;
+	// if there is negative consumption 
+	if ( !(ineg.is_empty()) ){
+		vec x(ineg.n_elem);
+		x.fill( myNA );
+ 		// set utility to myNA value
+		util.elem(ineg) = x;
+	}
 	
 
 	return util;

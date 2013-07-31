@@ -79,7 +79,6 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 	const int m  = cashR.ncol();	// number of discrete choices
 	const int k  = saveR.ncol();   // number of savings choices
 
-	const bool idx = true;	// set to FALSE if you want to return savings VALUE instead of INDEX
 
 	// some input checks
 	if (n != saveR.nrow()){
@@ -126,13 +125,8 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 	arma::mat tmpc(n,m);	// implied optimal consumption (value)
 	arma::uvec retiD(n);		// index of optimal discrete choice (index)
     arma::vec retV(n);		// value of optimal discrete choice 
-	if (idx) {
-		arma::umat tmps(n,m);
-	} else {
-		arma::mat tmps(n,m);	// optimizing savings choice (value)
-	}
-  //arma::vec retC(n);		// cons at discrete choice 
-	//arma::vec retS(n);		// save at discrete choice
+	arma::umat tmpis(n,m);
+	arma::mat tmps(n,m);	// optimizing savings choice (value)
   
 
 	// allocate for maximization loop
@@ -152,8 +146,6 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 	for (int i=0;i<m;i++){
 
    // in-loop timer
-		y.zeros();
-		iy.zeros();
 
 		// fill tmp with copies of cash
 		tmpcash = repmat(cash.col(i),1,k);
@@ -195,11 +187,8 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 			   tmpvec2 = tmpvec.subvec(r,k-1);
 			   y(irow) = tmpvec2.max(j);	// j is the uword recording the position of the maximal element
 			   tmpc(irow,i) = tmpcash(irow,j + r);
-			   if (idx) {
-				   tmps(irow,i,) = j + r + 1;
-			   } else {
-				   tmps(irow,i) = save(irow,j + r);	// savings matrix is the same for all discrete labor choices
-			   }
+			   tmpis(irow,i) = j + r + 1;
+			   tmps(irow,i) = save(irow,j + r);	// savings matrix is the same for all discrete labor choices
 			}
 		} else {
 			// there are no NAs in savings matrix, unrestricted choice
@@ -207,11 +196,8 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 				tmpvec       = W.row(irow);
 				tmpy(irow,i) = tmpvec.max( j );
 				tmpc(irow,i) = tmpcash(irow,j);
-				if (idx) {
-					tmps(irow,i) = j + 1;
-				} else {
-					tmps(irow,i) = save(irow,j);
-				}
+				tmpis(irow,i) = j + 1;
+				tmps(irow,i) = save(irow,j);
 			}
 		if (i==0) timer.step("maximize by row");
 		}
@@ -232,7 +218,7 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 
   // return vectors at optimal discrete choice: don't return conditional policy functions
   
-	Rcpp::List list = Rcpp::List::create( _["values"] = tmpy, _["saving"] = tmps, _["cons"] = tmpc, _["dchoiceL"] = retiD, _["maxL"] = retV, _["timer"]=timer);
+	Rcpp::List list = Rcpp::List::create( _["values"] = tmpy, _["saving"] = tmpis, _["cons"] = tmpc, _["dchoiceL"] = retiD, _["maxL"] = retV, _["timer"]=timer);
 	return list;
 }
 

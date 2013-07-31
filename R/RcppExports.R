@@ -42,14 +42,14 @@
 #' \item{maxL}{\code{(n,1)} vector of maximal value. maxL = max_d V_d.}
 #' @author Florian Oswald <florian.oswald@@gmail.com>
 #' @examples
-#' n = 5    # number of states
-#' k = 5    # number of savings choices by state
+#' n = 25000    # number of states
+#' k = 50       # number of savings choices by state
 #' m = 3    # number of discrete labor choices by state
 #' cash   <- matrix(1:n,n,m)
 #' cash   <- cash + matrix(0:2,n,m,byrow=TRUE)
 #' labo   <- seq(from=0,to=1,length=m)
 #' saving <- matrix(seq(from=0,to=8,length=k),n,k,byrow=TRUE)
-#' EV     <- log(outer(1:n,1:n))
+#' EV     <- log(outer(1:n,1:k))
 #' hsize  <- sample(0:2,size=n,replace=TRUE)
 #' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,quad=FALSE,borrconst=FALSE,myNA=-1e9,tau=1)
 #' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)

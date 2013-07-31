@@ -130,7 +130,6 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 
 	// allocate for maximization loop
 	arma::uword j;
-	arma::vec y(n);
 	arma::rowvec tmpvec(k);
 
 	// get consumption tax
@@ -184,7 +183,7 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 			   	r += 1;
 			   }
 			   tmpvec2 = tmpvec.subvec(r,k-1);
-			   y(irow) = tmpvec2.max(j);	// j is the uword recording the position of the maximal element
+			   tmpy(irow,i) = tmpvec2.max(j);	// j is the uword recording the position of the maximal element
 			   tmpc(irow,i) = tmpcash(irow,j + r);
 			   tmpis(irow,i) = j + r + 1;
 			   tmps(irow,i) = save(irow,j + r);	// savings matrix is the same for all discrete labor choices
@@ -197,13 +196,6 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 				tmpc(irow,i) = tmpcash(irow,j);
 				tmpis(irow,i) = j + 1;
 				tmps(irow,i) = save(irow,j);
-			}
-		if (i==0) timer.step("maximize by row");
-		}
-				y(irow)      = tmpvec.max( j );
-				tmpc(irow,i) = tmpcash(irow,j);
-				tmps(irow,i) = save(irow,j);	// savings matrix is the same for all discrete labor choices
-		//		iy(irow)    = j + 1; // go to 1 based indices we don't even need those indices anymore.
 			}
 		if (i==0) timer.step("maximize by row");
 		}

@@ -39,8 +39,6 @@ using namespace Rcpp;
 //' @param gamma coefficient of relative risk aversion
 //' @param cutoff minimum level of consumption. below cutoff, u(c) is quadratically approximated.
 //' @param alpha coefficient on labor
-//' @param quad boolean of whether neg cons quadratically approximated or not
-//' @param borrconst boolean of whether there are borrowing constraints built into the savings matrix
 //' @param myNA numerical value to be assigned to values with negative consumption (if quad == FALSE)
 //' @param tau numerical value of proportional consumption scaling. a value in [0,infty). used in welfare experiments
 //' @return list with elements
@@ -60,14 +58,8 @@ using namespace Rcpp;
 //' saving <- matrix(seq(from=0,to=8,length=k),n,k,byrow=TRUE)
 //' EV     <- log(outer(1:n,1:k))
 //' hsize  <- sample(0:2,size=n,replace=TRUE)
-//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,quad=FALSE,borrconst=FALSE,myNA=-1e9,tau=1)
+//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,myNA=-1e9,tau=1)
 //' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
-//' ##
-//' ## work with borrowing constraint in savings matrix: all saving less than x inadmissible
-//' ##
-//' saving[1,1:3] <-NA	# all savings less than element c(1,4) are illegal in row 1
-//' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,quad=TRUE,borrconst=TRUE,myNA=-1e9,tau=1)
-//' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars) 
 // [[Rcpp::export]]
 List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par){
 
@@ -78,6 +70,8 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
     const int n  = cashR.nrow();   // number of states
 	const int m  = cashR.ncol();	// number of discrete choices
 	const int k  = saveR.ncol();   // number of savings choices
+	// get consumption tax
+	double tau = Rcpp::as<double>(par["tau"]);
 
 	// some input checks
 	if (n != saveR.nrow()){
@@ -132,11 +126,6 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 	arma::uword j;
 	arma::rowvec tmpvec(k);
 
-	// get consumption tax
-	double tau = Rcpp::as<double>(par["tau"]);
-	// get borrowing constraint switch
-	bool b   = Rcpp::as<bool>(par["borrconst"]);
-
 
 	timer.step("allocate memory");
 	
@@ -163,42 +152,15 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 		// maximize
 		// loop over rows of W and find maximal value and it's index for each row.
 		//
-		// insert switch about restricted savings space here
-		// need to construct an index matrix FALSE where is not finite
-		if (b) {
-			// there are NAs in save matrix - need to account for that
-			for (int irow=0;irow<n;irow++){
-			// get current row of savings matrix to see which choices are illegal
-			   tmpvec = save.row(irow);
-			   // for this row, find all infinite indexes
-			   for (int r=0;r<k;r++){
-			       u(r) = arma::is_finite(tmpvec(r));
-			   }
-			   // overwrite with values of W
-			   tmpvec = W.row(irow);
-				// max over row
-			   // while is.na(u[j]), increase j to get to first non-na u[j]
-			   int r = 0;
-			   while ( !u(r) ){
-			   	r += 1;
-			   }
-			   tmpvec2 = tmpvec.subvec(r,k-1);
-			   tmpy(irow,i) = tmpvec2.max(j);	// j is the uword recording the position of the maximal element
-			   tmpc(irow,i) = tmpcash(irow,j + r);
-			   tmpis(irow,i) = j + r + 1;
-			   tmps(irow,i) = save(irow,j + r);	// savings matrix is the same for all discrete labor choices
-			}
-		} else {
-			// there are no NAs in savings matrix, unrestricted choice
-			for (int irow=0; irow<n; irow++) {
-				tmpvec       = W.row(irow);
-				tmpy(irow,i) = tmpvec.max( j );
-				tmpc(irow,i) = tmpcash(irow,j);
-				tmpis(irow,i) = j + 1;
-				tmps(irow,i) = save(irow,j);
-			}
-		if (i==0) timer.step("maximize by row");
+		// there are no NAs in savings matrix, unrestricted choice
+		for (int irow=0; irow<n; irow++) {
+			tmpvec       = W.row(irow);
+			tmpy(irow,i) = tmpvec.max( j );
+			tmpc(irow,i) = tmpcash(irow,j);
+			tmpis(irow,i) = j + 1;
+			tmps(irow,i) = save(irow,j);
 		}
+		if (i==0) timer.step("maximize by row");
 	}
 
 	timer.step("loop dchoice and maximize");
@@ -216,7 +178,7 @@ List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, Nu
 
   // return vectors at optimal discrete choice: don't return conditional policy functions
   
-	Rcpp::List list = Rcpp::List::create( _["values"] = tmpy, _["saving"] = tmpis, _["cons"] = tmpc, _["dchoiceL"] = retiD, _["maxL"] = retV, _["timer"]=timer);
+	Rcpp::List list = Rcpp::List::create( _["values"] = tmpy, _["saving"] = tmps, _["idx"] = tmpis, _["cons"] = tmpc, _["dchoiceL"] = retiD, _["maxL"] = retV, _["timer"]=timer);
 	return list;
 }
 
@@ -344,7 +306,7 @@ List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsiz
 
 //' Utility Function from Attanasio et al
 //'
-//' computes utility over consumption and housing
+//' computes utility over consumption and housing 
 //' @param Res resources aka consumption
 //' @param s vector of house sizes
 //' @param par list of parameters

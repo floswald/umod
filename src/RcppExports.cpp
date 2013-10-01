@@ -10,49 +10,66 @@ using namespace Rcpp;
 List util_module(NumericMatrix cashR, NumericMatrix saveR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par);
 RcppExport SEXP umod_util_module(SEXP cashRSEXP, SEXP saveRSEXP, SEXP EVRSEXP, SEXP hsizeRSEXP, SEXP laborRSEXP, SEXP parSEXP) {
 BEGIN_RCPP
-    Rcpp::RNGScope __rngScope;
-    NumericMatrix cashR = Rcpp::as<NumericMatrix >(cashRSEXP);
-    NumericMatrix saveR = Rcpp::as<NumericMatrix >(saveRSEXP);
-    NumericMatrix EVR = Rcpp::as<NumericMatrix >(EVRSEXP);
-    NumericVector hsizeR = Rcpp::as<NumericVector >(hsizeRSEXP);
-    NumericVector laborR = Rcpp::as<NumericVector >(laborRSEXP);
-    List par = Rcpp::as<List >(parSEXP);
-    List __result = util_module(cashR, saveR, EVR, hsizeR, laborR, par);
-    return Rcpp::wrap(__result);
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        NumericMatrix cashR = Rcpp::as<NumericMatrix >(cashRSEXP);
+        NumericMatrix saveR = Rcpp::as<NumericMatrix >(saveRSEXP);
+        NumericMatrix EVR = Rcpp::as<NumericMatrix >(EVRSEXP);
+        NumericVector hsizeR = Rcpp::as<NumericVector >(hsizeRSEXP);
+        NumericVector laborR = Rcpp::as<NumericVector >(laborRSEXP);
+        List par = Rcpp::as<List >(parSEXP);
+        List __result = util_module(cashR, saveR, EVR, hsizeR, laborR, par);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
 END_RCPP
 }
 // util_module_file
 List util_module_file(NumericMatrix cashR, NumericMatrix EVR, NumericVector hsizeR, NumericVector laborR, List par);
 RcppExport SEXP umod_util_module_file(SEXP cashRSEXP, SEXP EVRSEXP, SEXP hsizeRSEXP, SEXP laborRSEXP, SEXP parSEXP) {
 BEGIN_RCPP
-    Rcpp::RNGScope __rngScope;
-    NumericMatrix cashR = Rcpp::as<NumericMatrix >(cashRSEXP);
-    NumericMatrix EVR = Rcpp::as<NumericMatrix >(EVRSEXP);
-    NumericVector hsizeR = Rcpp::as<NumericVector >(hsizeRSEXP);
-    NumericVector laborR = Rcpp::as<NumericVector >(laborRSEXP);
-    List par = Rcpp::as<List >(parSEXP);
-    List __result = util_module_file(cashR, EVR, hsizeR, laborR, par);
-    return Rcpp::wrap(__result);
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        NumericMatrix cashR = Rcpp::as<NumericMatrix >(cashRSEXP);
+        NumericMatrix EVR = Rcpp::as<NumericMatrix >(EVRSEXP);
+        NumericVector hsizeR = Rcpp::as<NumericVector >(hsizeRSEXP);
+        NumericVector laborR = Rcpp::as<NumericVector >(laborRSEXP);
+        List par = Rcpp::as<List >(parSEXP);
+        List __result = util_module_file(cashR, EVR, hsizeR, laborR, par);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
 END_RCPP
 }
 // ufun_Attanasio
 NumericMatrix ufun_Attanasio(NumericMatrix ResR, NumericVector sR, List par);
 RcppExport SEXP umod_ufun_Attanasio(SEXP ResRSEXP, SEXP sRSEXP, SEXP parSEXP) {
 BEGIN_RCPP
-    Rcpp::RNGScope __rngScope;
-    NumericMatrix ResR = Rcpp::as<NumericMatrix >(ResRSEXP);
-    NumericVector sR = Rcpp::as<NumericVector >(sRSEXP);
-    List par = Rcpp::as<List >(parSEXP);
-    NumericMatrix __result = ufun_Attanasio(ResR, sR, par);
-    return Rcpp::wrap(__result);
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        NumericMatrix ResR = Rcpp::as<NumericMatrix >(ResRSEXP);
+        NumericVector sR = Rcpp::as<NumericVector >(sRSEXP);
+        List par = Rcpp::as<List >(parSEXP);
+        NumericMatrix __result = ufun_Attanasio(ResR, sR, par);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
 END_RCPP
 }
 // boom
 void boom();
 RcppExport SEXP umod_boom() {
 BEGIN_RCPP
-    Rcpp::RNGScope __rngScope;
-    boom();
+    {
+        Rcpp::RNGScope __rngScope;
+        boom();
+    }
     return R_NilValue;
 END_RCPP
 }

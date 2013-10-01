@@ -30,8 +30,6 @@
 #' @param gamma coefficient of relative risk aversion
 #' @param cutoff minimum level of consumption. below cutoff, u(c) is quadratically approximated.
 #' @param alpha coefficient on labor
-#' @param quad boolean of whether neg cons quadratically approximated or not
-#' @param borrconst boolean of whether there are borrowing constraints built into the savings matrix
 #' @param myNA numerical value to be assigned to values with negative consumption (if quad == FALSE)
 #' @param tau numerical value of proportional consumption scaling. a value in [0,infty). used in welfare experiments
 #' @return list with elements
@@ -51,14 +49,8 @@
 #' saving <- matrix(seq(from=0,to=8,length=k),n,k,byrow=TRUE)
 #' EV     <- log(outer(1:n,1:k))
 #' hsize  <- sample(0:2,size=n,replace=TRUE)
-#' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,quad=FALSE,borrconst=FALSE,myNA=-1e9,tau=1)
+#' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,myNA=-1e9,tau=1)
 #' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars)
-#' ##
-#' ## work with borrowing constraint in savings matrix: all saving less than x inadmissible
-#' ##
-#' saving[1,1:3] <-NA	# all savings less than element c(1,4) are illegal in row 1
-#' pars   <- list(theta=0.2,phival=0.9,mu=0.6,gamma=1.4,cutoff=0.1,alpha=-0.6,quad=TRUE,borrconst=TRUE,myNA=-1e9,tau=1)
-#' res <- util_module(cashR=cash, saveR=saving, EVR=EV, hsizeR=hsize, laborR=labo, par=pars) 
 util_module <- function(cashR, saveR, EVR, hsizeR, laborR, par) {
     .Call('umod_util_module', PACKAGE = 'umod', cashR, saveR, EVR, hsizeR, laborR, par)
 }
@@ -116,7 +108,7 @@ util_module_file <- function(cashR, EVR, hsizeR, laborR, par) {
 
 #' Utility Function from Attanasio et al
 #'
-#' computes utility over consumption and housing
+#' computes utility over consumption and housing 
 #' @param Res resources aka consumption
 #' @param s vector of house sizes
 #' @param par list of parameters
